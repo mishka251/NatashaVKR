@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]><html lang="ru" class="lt-ie9 lt-ie8 lt-ie7"><![endif]-->
+<!--[if IE 7]><html lang="ru" class="lt-ie9 lt-ie8"><![endif]-->
+<!--[if IE 8]><html lang="ru" class="lt-ie9"><![endif]-->
+<!--[if gt IE 8]><!-->
+<html lang="ru">
+<!--<![endif]-->
+<head>
+{% load staticfiles %}
+	<meta charset="utf-8" />
+	<title>Geomagnet</title>
+	<meta name="description" content="" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="shortcut icon" href="favicon.png" />
+	<link rel="stylesheet" href={%static "/libs/bootstrap/bootstrap-grid-3.3.1.min.css"%} />
+	<link rel="stylesheet" href={%static "/libs/font-awesome-4.2.0/css/font-awesome.min.css"%} />
+	<link rel="stylesheet" href={%static "/css/fonts.css"%} />
+	<link rel="stylesheet" href={%static "/css/main.css"%} />
+	<link rel="stylesheet" href={%static "/css/media.css"%} />
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.3/esri/css/main.css">
+  <script src="https://js.arcgis.com/4.3/"></script>
+<script src={%static "libs/jquery/jquery-1.11.1.min.js" %}></script>
+
+<script src={%static "/libs/animateNumbers/jquery.color.min.js"%}></script>
+<script src={%static "/libs/animateNumbers/jquery.animateNumber.min.js"%}></script>
+
+<style>
+.arc text {
+    font-family: "RobotoRegular", sans-serif;
+  font-size: 10px;
+  fill: #6f6f6f;
+  text-anchor: middle;
+}
+
+.arc path {
+  //stroke: #9d9d9d;
+}
+
+#tooltip {
+    position: absolute;z-index:100000000;opacity:0;
+        background: #eee;
+        box-shadow: 0 0 5px #999999;
+        color: #333;
+        font-size: 12px;
+        left: 130px;
+        padding: 10px;
+        position: absolute;
+        text-align: center;
+        top: 95px;
+        width: 80px;cursor: pointer;
+}
+#tooltip.hidden {
+    opacity: 0;
+}
+#tooltip p {
+    font-family: "RobotoRegular", sans-serif;cursor: pointer;
+    font-size: 10px;    
+    margin: 0;
+    line-height: 12px;
+}
+
+input[type=radio],
+input[type=checkbox]{
+  /* Hide original inputs */
+  visibility: hidden;
+  position: absolute;
+}
+input[type=radio] + label:before,
+input[type=checkbox] + label:before{
+  height:12px;
+  width:12px;
+  margin-right: 2px;
+  content: " ";
+  display:inline-block;
+  vertical-align: baseline;
+  border:1px solid #777;
+}
+input[type=radio]:checked + label:before,
+input[type=checkbox]:checked + label:before{
+  background:#9d9d9d;
+}
+
+/* CUSTOM RADIO AND CHECKBOX STYLES */
+input[type=radio] + label:before{
+  border-radius:50%;
+}
+input[type=checkbox] + label:before{
+  border-radius:2px;
+}
+
+#ca:hover {
+    color: #003399;cursor: pointer;
+}
+</style>
+  <script src = {% static "/script.js"%}>
+
+  </script>
+</head>
+<body>
+	<!--[if lt IE 9]>
+	<script src={%static "/libs/html5shiv/es5-shim.min.js"%}></script>
+	<script src={%static "/libs/html5shiv/html5shiv.min.js"%}></script>
+	<script src={%static "/libs/html5shiv/html5shiv-printshiv.min.js"%}></script>
+	<script src={%static "/libs/respond/respond.min.js"%}></script>
+	<![endif]-->
+
+<style id="style">
+.LocateButton{position: absolute; top:95px; left: 21px;z-index:1000}
+    .esri-search {display:block;z-index:100000000;}
+    #f{
+    border: none !important;}
+</style>
+
+	<header class="top_header">
+		<div class="header_topline">
+			<div class="container">
+				<div class="col-md-12">
+					<div class="row">						    
+					    <table style="float:left;margin-top:-3px;width: 28px;border-spacing: 2px 2px;border-collapse: separate;margin-right:5px">
+						        <tr>
+						            <td style="width:10px;height:12px;background-color:green"></td>
+						            <td style="width:10px;background-color:rgb(101, 149, 255)"></td>
+						        </tr>
+						        <tr>
+						            <td style="width:10px;height:12px;background-color:#003399"></td>
+						            <td style="width:10px;height:12px;background-color:rgb(153, 0, 204)"></td>
+						        </tr>						        
+						</table>
+						<div class="top_logo">
+							<a href="index.html" class="logo_geomagnet">GEOMAGNET</a>
+						</div>
+						<div class="mnu">
+							<nav class="main_mnu clearfix">						
+								<button class="main_mnu_button"><i class="fa fa-bars"></i></button>
+								<ul>							
+									<li><a href="about_us.html">About us</a></li>
+									<li><a href="grants.html">Grants & Awards</a></li>
+									<li><a href="publications.html">Publications</a></li>
+									<li><a href="contacts.html" style="margin-right:10px">Contact us</a></li>
+								</ul>								
+							</nav>					
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>		
+	</header>	
+
+        
+    <div class="container-fluid">
+        <div id="map" class="map">
+             <div id="LocateButton" class="wow bounceInRight animated"></div>
+             <div style="position:absolute;z-index:0;top:2px;margin-right:2.1px;background: none repeat scroll 0 0 rgba(45,46,41,.85); color: #fff; border-radius: 0; box-shadow: 0 0 10px rgba(0,0,0,0.7);border-radius:2.1px;right:0px;width:270px;height:1000px;font-size: 12px;color:#9d9d9d">
+                 <div id="r" style="margin-top:60px">
+                     <center><span style="font-size: 15px;">Magnetic Ground Stations</span>
+                     <br/>
+                     <span>
+                         (from <span id="StartDate" style="display:none">...</span>01-01-2018 to <span id="EndDate" style="display:none">...</span>01.02.2019)
+                     </span>
+                     </center>
+                     <br/>
+                     <table style="font-size: 12px;color:#9d9d9d">
+                         <tr>
+                             
+                             <td colspan="2" rowspan="2">Type</td>
+                             <td colspan="4">Efficiency</td>
+                             
+                         </tr>
+                         <tr>
+                             <td>High</td>
+                             <td>Low</td>
+                             <td>None</td>
+                             <td>Total</td>
+                         </tr>                         
+                         <tr>
+                             <td>&#x2666;</td>
+                             <td>
+                                 INTERMAGNET 
+                             </td>
+                             <td>
+                                 <span id="h_imo">...</span>
+                             </td>
+                             <td>
+                                 <span id="l_imo">...</span>
+                             </td>
+                             <td>
+                                 <span id="n_imo">...</span>
+                             </td>  
+                             <td>
+                                 <span id="t_imo">...</span>
+                             </td>                             
+                         </tr>
+                         <tr>
+                             <td>&#x25c9;</td>
+                             <td>
+                                 GC RAS 
+                             </td>
+                             <td>
+                                 <span id="h_gcras">...</span>
+                             </td>
+                             <td>
+                                 <span id="l_gcras">...</span>
+                             </td>
+                             <td>
+                                 <span id="n_gcras">...</span>
+                             </td>  
+                             <td>
+                                 <span id="t_gcras">...</span>
+                             </td>                             
+                         </tr>  
+
+                         <tr>
+                             <td colspan="2">Total</td>
+                             <td><span id="h_t">...</span></td>
+                             <td><span id="l_t">...</span></td>
+                             <td><span id="n_t">...</span></td>
+                             <td><span id="total">...</span></td>                             
+                         </tr>
+                     </table>
+<br/>  
+<center><span style="font-size: 15px;">Magnetic Stations Efficiency</span>
+                     <br/>
+                     <span>
+                         (average = <span id="avg">...</span> %)
+                     </span>
+                     </center>
+<div>&nbsp;
+<svg id="puf"></svg>
+</div>
+<div id="rr">&nbsp;
+
+</div>
+<br/>
+<center id="ca" style="cursor: hand;"><a id="switch" style="font-size: 15px;">Correlation Analysis</a>
+                     <br/>
+                     <span>
+                         (between the <span id="station">...</span> and other magnetic stations)
+                     </span>
+                     </center>
+<br/>
+<div id="f" border="0" style="font-size: 12px;color:#9d9d9d;padding-left:30px;float:left">
+
+            <input type="radio" name="r" id="r1" checked><label for="r1">&nbsp;North Component (X)</label><br/><br/>
+            <input type="radio" name="r" id="r2" ><label for="r2">&nbsp;East Component (Y)</label><br/><br/>
+            <input type="radio" name="r" id="r3" ><label for="r3">&nbsp;Down Component (Z)</label><br/><br/>
+            <input type="radio" name="r" id="r4" ><label for="r4">&nbsp;Total Intensity (F)</label>            
+</div>
+
+
+
+
+    </div>
+                 
+             </div>
+         </div>
+    </div>
+<div id="tooltip" >
+    <p><span id="value">100</span>%</p>
+</div>
+</body>
+</html>
