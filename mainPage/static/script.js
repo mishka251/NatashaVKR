@@ -1,7 +1,7 @@
-var imo_qty = 0;
+/*var imo_qty = 0;
 var gcras_qty = 0;
 var h_imo_qty = 0, l_imo_qty = 0, n_imo_qty = 0, h_gcras_qty = 0, l_gcras_qty = 0, n_gcras_qty = 0;
-var sum = 0;
+var sum = 0;*/
 
 require([
     "esri/Map",
@@ -16,7 +16,7 @@ require([
 
     //streets", "satellite", "hybrid", "terrain", "topo", "gray", "dark-gray", "oceans", "national-geographic", "osm", "dark-gray-vector", "gray-vector", "streets-vector", "topo-vector", "streets-night-vector", "streets-relief-vector", "streets-navigation-vector"
 
-    drawpie(0, 0, 0, 0);
+    drawpie1(0, 0, 0, 0, 0);
     var map = new Map({
         basemap: "gray-vector"
     });
@@ -27,6 +27,7 @@ require([
 
 
     function createView(flag) {
+
         view = new MapView({
             container: "map",
             map: map,
@@ -64,19 +65,17 @@ require([
             position: "top-right",
             index: 0
         });
-      /*  if (flag == 0) {
-            IMOs();
-        }
-        else {
-            IMOs_corr();
-        }*/
+
     }
 
-
+    $('#date').change(function () {
+        loadValues();
+    });
     function loadValues() {
-        data = '2018-01-04';
-        let url = '/info/?date=' + data;
-       // console.log(url);
+        let dat1 = $('#date').val();
+        //console.log(dat1);
+        let url = '/info/?date=' + dat1;
+        // console.log(url);
         $.ajax(
             {
                 url: url,
@@ -86,32 +85,32 @@ require([
                 }
             });
     }
-    loadValues();
+    //loadValues();
     function showIMO(json) {
         jsObj = $.parseJSON(json);
-       let counts = {
+        let counts = {
             '1': 0,
             '2': 0,
             '3': 0,
-			'4':0
+            '4': 0
         };
-		C = midC(jsObj);
-        for ( key in jsObj) {
+        C = midC(jsObj);
+        for (key in jsObj) {
             newDrawInfo(key, jsObj[key].coords.lat, jsObj[key]['coords']['long'], jsObj[key]['eff'], C);
             counts[getClass(jsObj[key]['eff'], C)]++;
         }
-		
-		drawpie1(counts['1'], counts['2'], counts['3'],counts['4'],  1);
+
+        drawpie1(counts['1'], counts['2'], counts['3'], counts['4'], 1);
     }
-function midC(jsObj){
-	sum = 0;
-	cnt = 0;
-	   for ( key in jsObj) {
-		   cnt++;
-            sum+=jsObj[key]['eff'];
+    function midC(jsObj) {
+        sum = 0;
+        cnt = 0;
+        for (key in jsObj) {
+            cnt++;
+            sum += jsObj[key]['eff'];
         }
-		return sum/cnt;
-}
+        return sum / cnt;
+    }
     function fixLng(lng) {
         if (lng > 180) {
             lng = lng - 360;
@@ -179,7 +178,7 @@ function midC(jsObj){
 
     }
 
-   
+
 
     function getPoint(lat, lng) {
         let point = new Point({
@@ -192,19 +191,19 @@ function midC(jsObj){
 
 
     function getClass(eff, C) {
-if(eff>=100)
-	return '1';
+        if (eff >= 100)
+            return '1';
 
-        if (eff >=C)
+        if (eff >= C)
             return '2';
-        if (eff >0)
+        if (eff > 0)
             return '3';
         return '4';
     }
 
     function getColor(clas) {
-		if(clas=='4')
-			return [0, 0, 0];
+        if (clas == '4')
+            return [0, 0, 0];
         if (clas == '3')
             return [227, 0, 0];
         if (clas == '2')
@@ -261,12 +260,26 @@ if(eff>=100)
         return format_date;
     }
 
+    $(document).ready(function () {
+        var date = new Date();
 
+        var day = date.getDate();
+        var month = date.getMonth() + 1;
+        var year = date.getFullYear();
 
+        if (month < 10) month = "0" + month;
+        if (day < 10) day = "0" + day;
+
+        var today = year + "-" + month + "-" + day;
+        $("#date").attr("value", today);
+
+        loadValues();
     });
 
+});
 
-function drawpie1(c1, c2, c3, c4,  flag) {
+
+function drawpie1(c1, c2, c3, c4, flag) {
     var svg, color;
     if (flag != 1) {
         svg = d3.select("svg"),
@@ -294,7 +307,7 @@ function drawpie1(c1, c2, c3, c4,  flag) {
             { "class": "High", "population": c1 },
             { "class": "None", "population": c4 },
             { "class": "Eff", "population": c2 },
-			{ "class": "Low", "population": c3 }
+            { "class": "Low", "population": c3 }
         ];
     }
 
@@ -372,108 +385,3 @@ function drawpie1(c1, c2, c3, c4,  flag) {
 
 }
 
-
-function drawpie(high, low, none, flag) {
-    var svg, color;
-    if (flag != 1) {
-        svg = d3.select("svg"),
-            width = 320,
-            height = 147,
-            radius = Math.min(width, height) / 2,
-            g = svg.append("g").attr("transform", "translate(" + width / 2.33 + "," + height / 2 + ")");
-        color = d3.scaleOrdinal(["#929292", "#929292", "#929292"]);
-        data = [
-            { "class": "", "population": 0 },
-            { "class": "", "population": 0 },
-            { "class": "Loading...", "population": 100 }
-        ];
-    } else {
-        document.getElementById("avg").innerHTML = (sum / 156).toFixed(2);
-        document.getElementById("puf").style.display = "none";
-        color = d3.scaleOrdinal(["#003399", "#5E8EC4", "#B2B2B2"]);
-        svg = d3.select("#rr")
-            .append("svg"),
-            width = 320,
-            height = 147,
-            radius = Math.min(width, height) / 2,
-            g = svg.append("g").attr("transform", "translate(" + width / 2.33 + "," + height / 2 + ")");
-        data = [
-            { "class": "High", "population": high },
-            { "class": "Low", "population": low },
-            { "class": "None", "population": none }
-        ];
-    }
-
-
-
-
-    var arcw = d3.arc()
-        .outerRadius(radius);
-
-    var pie = d3.pie()
-        .sort(null)
-        .value(function (d) { return d.population; });
-
-    var path = d3.arc()
-        .outerRadius(radius - 10)
-        .innerRadius(0);
-
-    var label = d3.arc()
-        .outerRadius(radius - 39)
-        .innerRadius(radius - 50);
-
-
-    var arc = g.selectAll(".arc")
-        .data(pie(data))
-        .enter().append("g")
-        .attr("class", "arc");
-
-
-
-    var dd = arc.append("path")
-        .attr("d", path)
-        .attr("fill", function (d) { return color(d.data.class); });
-
-    if (flag == 1) {
-        dd.transition()
-            .duration(1000)
-            //.transition()
-            .ease(d3.easeLinear)
-            .attrTween("d", tweenPie);
-
-        arc.on("mouseover", function (d) {
-            d3.select("#tooltip")
-                .style("left", d3.event.pageX + "px")
-                .style("top", d3.event.pageY + "px")
-                .style("opacity", 1)
-                .select("#value")
-                .text(100 * ((d.value / 156).toFixed(2)));
-        })
-            .on("mouseout", function () {
-                // Hide the tooltip
-                d3.select("#tooltip")
-                    .style("opacity", 0);;
-            });
-    }
-    function tweenPie(b) {
-        b.innerRadius = 0;
-        var i = d3.interpolate({ startAngle: 0, endAngle: 0 }, b);
-        return function (t) { return arcw(i(t)); };
-    }
-    if (flag != 1) {
-        arc.append("text")
-            .attr("transform", function (d) { return "translate(" + label.centroid(d) + ")"; })
-            .attr("dy", "0.37em")
-            .style("fill", "#494A46")
-            .text(function (d) { return d.data.class; });
-    } else {
-        arc.append("text")
-            .attr("transform", function (d) { return "translate(" + label.centroid(d) + ")"; })
-            .attr("dy", "0.37em")
-            .text(function (d) { return d.data.class; });
-
-    }
-
-
-
-}
