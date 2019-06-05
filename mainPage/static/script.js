@@ -25,13 +25,6 @@ require([
     createView(0);
 
 
-    var a = document.getElementById('switch');
-
-    //вешаем на него событие
-    a.onclick = function () {
-        //createView(1);
-        return false;
-    };
 
     function createView(flag) {
         view = new MapView({
@@ -88,7 +81,7 @@ require([
             {
                 url: url,
                 success: function (json) {
-                    console.log(json);
+                    //console.log(json);
                     showIMO(json);
                 }
             });
@@ -97,16 +90,26 @@ require([
     function showIMO(json) {
         jsObj = $.parseJSON(json);
        let counts = {
-            'high': 0,
-            'mid': 0,
-            'low': 0
+            '1': 0,
+            '2': 0,
+            '3': 0,
+			'4':0
         };
+		C = midC(jsObj);
         for ( key in jsObj) {
-            newDrawInfo(key, jsObj[key].coords.lat, jsObj[key]['coords']['long'], jsObj[key]['eff']);
-            counts[getClass(jsObj[key]['eff'])]++;
+            newDrawInfo(key, jsObj[key].coords.lat, jsObj[key]['coords']['long'], jsObj[key]['eff'], C);
+            counts[getClass(jsObj[key]['eff'], C)]++;
         }
     }
-
+function midC(jsObj){
+	sum = 0;
+	cnt = 0;
+	   for ( key in jsObj) {
+		   cnt++;
+            sum+=jsObj[key]['eff'];
+        }
+		return sum/cnt;
+}
     function fixLng(lng) {
         if (lng > 180) {
             lng = lng - 360;
@@ -114,7 +117,7 @@ require([
         return lng;
     }
 
-    function newDrawInfo(code, lat, lng, eff) {
+    function newDrawInfo(code, lat, lng, eff, C) {
         lng = fixLng(lng);
 
         let point = getPoint(lat, lng);
@@ -124,7 +127,7 @@ require([
         let text = code + ' (' + eff + ' %)';
 
 
-        let clas = getClass(eff);
+        let clas = getClass(eff, C);
         let color = getColor(clas);
 
 
@@ -186,85 +189,29 @@ require([
         return point;
     }
 
-   /* function getStyle() {
-        let src_style = "diamond";
-        return src_style;
-    }*/
 
-    function getClass(eff) {
+    function getClass(eff, C) {
+if(eff>=100)
+	return '1';
 
-        if (eff < 50)
-            return 'low';
-        if (eff < 75)
-            return 'mid';
-        return 'high';
+        if (eff >=C)
+            return '2';
+        if (eff >0)
+            return '3';
+        return '4';
     }
 
     function getColor(clas) {
-        if (clas == 'low')
+		if(clas=='4')
+			return [0, 0, 0];
+        if (clas == '3')
             return [227, 0, 0];
-        if (clas == 'mid')
+        if (clas == '2')
             return color = [227, 206, 0];;
-        if (clas == 'high')
+        if (clas == '1')
             return color = [0, 153, 0];;
     }
 
-
-  /*  function getMarker(style) {
-        let markerSymbol = new SimpleMarkerSymbol({
-            color: [0, 51, 153],
-            style: style,
-            size: "14px",
-            outline: { // autocasts as new SimpleLineSymbol()
-                color: [255, 255, 255],
-                width: 1
-            }
-        });
-
-        return markerSymbol;
-    }
-
-    function getTextSymbol(text) {
-        let textSymbol = new TextSymbol({
-            color: [0, 51, 153],
-            backgroundColor: [255, 255, 255],
-            text: text,
-            xoffset: 3,
-            yoffset: 5,
-            font: {  // autocast as esri/symbols/Font
-                size: 10,
-                family: "sans-serif",
-                weight: "bolder"
-            }
-        });
-
-        return textSymbol;
-    }*/
-
-
-/*
-    function IMOs() {
-        var url = "IMO/script.php" + "?dummy=" + new Date().getTime();
-        $.ajax({
-            url: url,
-            context: document.body,
-            success: function (xml) {
-                drawIMOs(xml);
-            }
-        });
-    }
-
-    function IMOs_corr() {
-        var url = "IMO/correlation.php" + "?dummy=" + new Date().getTime();
-        $.ajax({
-            url: url,
-            context: document.body,
-            success: function (xml) {
-                drawIMOs_corr(xml);
-            }
-        });
-    }
-    */
 
     function formatDate(date) {
         //2016-11-01 
@@ -313,286 +260,7 @@ require([
         return format_date;
     }
 
-  /*  function drawIMOs_corr(request) {
-        var arr = $.parseJSON(request);
-        var src_lng = arr[0][2];
-        if (src_lng > 180) {
-            lng = lng - 360;
-        }
-        var point = new Point({
-            longitude: src_lng,
-            latitude: arr[0][1]
-        });
 
-        var src_style = "diamond";
-        if (arr[0][3] == 'GCRAS') {
-            src_style = "circle";
-        }
-        var src_text = arr[0][0];
-        var markerSymbol = new SimpleMarkerSymbol({
-            color: [0, 51, 153],
-            style: src_style,
-            size: "14px",
-            outline: { // autocasts as new SimpleLineSymbol()
-                color: [255, 255, 255],
-                width: 1
-            }
-        });
-
-        var textSymbol = new TextSymbol({
-            color: [0, 51, 153],
-            backgroundColor: [255, 255, 255],
-            text: src_text,
-            xoffset: 3,
-            yoffset: 5,
-            font: {  // autocast as esri/symbols/Font
-                size: 10,
-                family: "sans-serif",
-                weight: "bolder"
-            }
-        });
-
-
-
-
-        var pointGraphic = new Graphic({
-            geometry: point,
-            symbol: markerSymbol
-        });
-
-        pointGraphic.setAttribute("id", arr[0][0]);
-
-
-
-        view.graphics.addMany([pointGraphic]);
-
-        pointGraphic = new Graphic({
-            geometry: point,
-            symbol: textSymbol
-        });
-        view.graphics.addMany([pointGraphic]);
-
-
-
-
-        for (var i = 1; i < arr.length; i++) {
-            var lng = arr[i][2];
-            if (lng > 180) {
-                lng = lng - 360;
-            }
-            var point = new Point({
-                longitude: lng,
-                latitude: arr[i][1]
-            });
-            var style = "diamond";
-            var size = "14px";
-            var color = [0, 51, 153];
-            var text = arr[i][0] + ' (' + arr[i][4] + ' %)';
-
-            if (arr[i][3] == 'GCRAS') {
-                style = "circle";
-                size = "12px";
-            }
-            if ((arr[i][4] <= 100) && (arr[i][4] >= 75)) {
-                color = [0, 153, 0];
-                // color = [94,142,196];
-                //  sum = sum + parseFloat(arr[i][12]);
-                //text = arr[i][0]+' ('+arr[i][12] + ' %)';
-            }
-            if ((arr[i][4] < 75) && (arr[i][4] >= 50)) {
-                color = [227, 206, 0];
-                // color = [94,142,196];
-                //  sum = sum + parseFloat(arr[i][12]);
-                //text = arr[i][0]+' ('+arr[i][12] + ' %)';
-            }
-            if ((arr[i][4] < 50)) {
-                color = [227, 0, 0];
-                // color = [94,142,196];
-                //  sum = sum + parseFloat(arr[i][12]);
-                //text = arr[i][0]+' ('+arr[i][12] + ' %)';
-            }
-
-            var markerSymbol = new SimpleMarkerSymbol({
-                color: color,
-                style: style,
-                size: size,
-                outline: { // autocasts as new SimpleLineSymbol()
-                    color: [255, 255, 255],
-                    width: 1
-                }
-            });
-            var t = "t";
-            var textSymbol = new TextSymbol({
-                color: color,
-                backgroundColor: [255, 255, 255],
-                text: text,
-                xoffset: 3,
-                yoffset: 5,
-                font: {  // autocast as esri/symbols/Font
-                    size: 10,
-                    family: "sans-serif",
-                    weight: "bolder"
-                }
-            });
-
-
-
-
-            var pointGraphic = new Graphic({
-                geometry: point,
-                symbol: markerSymbol
-            });
-
-            pointGraphic.setAttribute("id", arr[i][0]);
-
-
-
-            view.graphics.addMany([pointGraphic]);
-
-            pointGraphic = new Graphic({
-                geometry: point,
-                symbol: textSymbol
-            });
-            view.graphics.addMany([pointGraphic]);
-
-
-        }
-
-    }
-
-    function drawIMOs(request) {
-        var arr = $.parseJSON(request);
-        $('#total').animateNumber({ number: arr.length }, 1000);
-        document.getElementById("StartDate").innerHTML = formatDate(arr[0][13]);
-        document.getElementById("EndDate").innerHTML = formatDate(arr[0][14]);
-        for (var i = 0; i < arr.length; i++) {
-            var lng = arr[i][4];
-            if (lng > 180) {
-                lng = lng - 360;
-            }
-            var point = new Point({
-                longitude: lng,
-                latitude: arr[i][3]
-            });
-            var style = "diamond";
-            var size = "14px";
-            var color = [0, 51, 153];
-            var text = arr[i][0];
-            if (arr[i][10] == 'IMO') {
-                imo_qty++;
-                if (arr[i][11] == 'Class1') {
-                    h_imo_qty++;
-                }
-                if (arr[i][11] == 'Class2') {
-                    l_imo_qty++;
-                }
-                if (arr[i][11] == 'Class3') {
-                    n_imo_qty++;
-                }
-                //h_imo
-            } else {
-                gcras_qty++;
-                if (arr[i][11] == 'Class1') {
-                    h_gcras_qty++;
-                }
-                if (arr[i][11] == 'Class2') {
-                    l_gcras_qty++;
-                }
-                if (arr[i][11] == 'Class3') {
-                    n_gcras_qty++;
-                }
-            }
-            if (arr[i][10] == 'GCRAS') {
-                style = "circle";
-                size = "12px";
-            }
-            if (arr[i][11] == 'Class2') {
-                color = [94, 142, 196];
-                sum = sum + parseFloat(arr[i][12]);
-                text = arr[i][0] + ' (' + arr[i][12] + ' %)';
-            }
-            if (arr[i][11] == 'Class3') {
-                color = [178, 178, 178];
-                sum = sum;
-            }
-            if (arr[i][11] == 'Class1') {
-                //color = [178,178,178];
-                sum = sum + 100;
-            }
-            var markerSymbol = new SimpleMarkerSymbol({
-                color: color,
-                style: style,
-                size: size,
-                outline: { // autocasts as new SimpleLineSymbol()
-                    color: [255, 255, 255],
-                    width: 1
-                }
-            });
-            var t = "t";
-            var textSymbol = new TextSymbol({
-                color: color,
-                backgroundColor: [255, 255, 255],
-                text: text,
-                xoffset: 3,
-                yoffset: 5,
-                font: {  // autocast as esri/symbols/Font
-                    size: 10,
-                    family: "sans-serif",
-                    weight: "bolder"
-                }
-            });
-
-
-
-
-            var pointGraphic = new Graphic({
-                geometry: point,
-                symbol: markerSymbol
-            });
-
-            pointGraphic.setAttribute("id", arr[i][0]);
-
-
-
-            view.graphics.addMany([pointGraphic]);
-
-            pointGraphic = new Graphic({
-                geometry: point,
-                symbol: textSymbol
-            });
-            view.graphics.addMany([pointGraphic]);
-
-
-
-
-
-
-        }
-
-
-        //document.getElementById("imo").innerHTML = imo_qty; 
-        $('#imo').animateNumber({ number: imo_qty }, 1000);
-        $('#gcras').animateNumber({ number: gcras_qty }, 1000);
-        $('#h_imo').animateNumber({ number: h_imo_qty }, 1000);
-        $('#l_imo').animateNumber({ number: l_imo_qty }, 1000);
-        $('#n_imo').animateNumber({ number: n_imo_qty }, 1000);
-        $('#t_imo').animateNumber({ number: h_imo_qty + l_imo_qty + n_imo_qty }, 1000);
-        $('#h_gcras').animateNumber({ number: h_gcras_qty }, 1000);
-        $('#l_gcras').animateNumber({ number: l_gcras_qty }, 1000);
-        $('#n_gcras').animateNumber({ number: n_gcras_qty }, 1000);
-        $('#t_gcras').animateNumber({ number: h_gcras_qty + l_gcras_qty + n_gcras_qty }, 1000);
-        $('#h_t').animateNumber({ number: h_imo_qty + h_gcras_qty }, 1000);
-        $('#l_t').animateNumber({ number: l_imo_qty + l_gcras_qty }, 1000);
-        $('#n_t').animateNumber({ number: n_imo_qty + n_gcras_qty }, 1000);
-
-
-        drawpie(h_imo_qty + h_gcras_qty, l_imo_qty + l_gcras_qty, n_imo_qty + n_gcras_qty, 1);
-
-
-
-
-    }
-    */
 
     });
 
