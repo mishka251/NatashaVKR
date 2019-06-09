@@ -347,6 +347,9 @@ require([
 function drawpie1(c1, c2, c3, c4, flag) {
     var svg, color;
     let sum = c1 + c2 + c3 + c4;
+
+    document.getElementById("rr").innerHTML = "";
+
     if (flag != 1) {
         svg = d3.select("svg"),
             width = 320,
