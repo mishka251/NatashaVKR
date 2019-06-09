@@ -1,8 +1,4 @@
-/*var imo_qty = 0;
-var gcras_qty = 0;
-var h_imo_qty = 0, l_imo_qty = 0, n_imo_qty = 0, h_gcras_qty = 0, l_gcras_qty = 0, n_gcras_qty = 0;
-var sum = 0;*/
-
+﻿
 require([
     "esri/Map",
     "esri/views/MapView",
@@ -11,128 +7,133 @@ require([
     "esri/symbols/SimpleMarkerSymbol",
     "esri/symbols/TextSymbol",
     "esri/widgets/Search",
+    "esri/layers/GraphicsLayer",
     "dojo/domReady!"
-], function (Map, MapView, Graphic, Point, SimpleMarkerSymbol, TextSymbol, Search) {
 
-    //streets", "satellite", "hybrid", "terrain", "topo", "gray", "dark-gray", "oceans", "national-geographic", "osm", "dark-gray-vector", "gray-vector", "streets-vector", "topo-vector", "streets-night-vector", "streets-relief-vector", "streets-navigation-vector"
+], function (Map, MapView, Graphic, Point, SimpleMarkerSymbol, TextSymbol, Search, GraphicsLayer) {
 
     drawpie1(0, 0, 0, 0, 0);
+    var layer = new GraphicsLayer(
+        {
+            graphics: []
+        });
     var map = new Map({
-        basemap: "gray-vector"
+        basemap: "gray-vector",
+        layers: [layer]
     });
 
     var view;
     createView(0);
 
 
+    function showAllStations(date) {
+        let layer = map.layers.items[0];
 
-    function createView(flag) {
+        drawStations(layer, stations, date);
 
-        view = new MapView({
-            container: "map",
-            map: map,
-            center: [54.7249, 55.9425],
-            zoom: 5,
-            constraints: {
-                minZoom: 2
-            }
-        });
-
-        view.on("click", function (evt) {
-            var screenPoint = {
-                x: evt.x,
-                y: evt.y
-            };
-
-            view.hitTest(screenPoint).then(function (response) {
-                if (response.results[0].graphic) {
-                    document.getElementById("station").innerHTML = response.results[0].graphic.getAttribute("id");
-
-                }
-            });
-
-
-
-        });
-
-        var searchWidget = new Search({
-            view: view
-        });
-
-        // Adds the search widget below other elements in
-        // the top left corner of the view
-        view.ui.add(searchWidget, {
-            position: "top-right",
-            index: 0
-        });
-
-    }
-
-    $('#date').change(function () {
-        loadValues();
-    });
-    function loadValues() {
-        let dat1 = $('#date').val();
-        //console.log(dat1);
-        let url = '/info/?date=' + dat1;
-        // console.log(url);
-        $.ajax(
-            {
-                url: url,
-                success: function (json) {
-                    //console.log(json);
-                    showIMO(json);
-                }
-            });
-    }
-    //loadValues();
-    function showIMO(json) {
-        jsObj = $.parseJSON(json);
-        let counts = {
-            '1': 0,
-            '2': 0,
-            '3': 0,
-            '4': 0
-        };
-        C = midC(jsObj);
-        for (key in jsObj) {
-            newDrawInfo(key, jsObj[key].coords.lat, jsObj[key]['coords']['long'], jsObj[key]['eff'], C);
-            counts[getClass(jsObj[key]['eff'], C)]++;
-        }
+        let counts = calculateCountsForDate(stations, date);
 
         drawpie1(counts['1'], counts['2'], counts['3'], counts['4'], 1);
-    }
-    function midC(jsObj) {
-        sum = 0;
-        cnt = 0;
-        for (key in jsObj) {
-            cnt++;
-            sum += jsObj[key]['eff'];
-        }
-        return sum / cnt;
-    }
-    function fixLng(lng) {
-        if (lng > 180) {
-            lng = lng - 360;
-        }
-        return lng;
+
     }
 
-    function newDrawInfo(code, lat, lng, eff, C) {
-        lng = fixLng(lng);
 
-        let point = getPoint(lat, lng);
+    function drawStations(layer, stationsInfo, date) {
+        layer.removeAll();
+
+        C = midC(stationsInfo);
+        for (key in stationsInfo) {
+            console.log(stationsInfo[key]);
+            let eff = stationsInfo[key]['eff'][date];
+            if (eff === undefined)
+                continue;
+
+            let lat = stationsInfo[key]['coords']['lat'];
+            let lng = stationsInfo[key]['coords']['long'];
+            let code = stationsInfo[key]['name'];
+            lng = fixLng(lng);
+
+            let point = getPoint(lat, lng);
+
+
+            let text = code + ' (' + eff + ' %)';
+
+
+            let clas = getClass(eff, C);
+            let color = getColor(clas);
+
+
+            let markerSymbol = getMarker(color);
+            let textSymbol = getTextSymbol(color, text);
+
+
+            var listData2 = Object.keys(stationsInfo[key]['eff']);
+
+            var listData = listData2.map(
+                function (item) {
+                    return {
+                        fieldName: item
+                    };
+                });
+
+            console.log(listData, listData2);
+
+            var media2 = {
+                type: "media",
+                mediaInfos: [
+                    {
+                        type: "line-chart",
+                        value: {
+                            fields: listData2
+                        }
+                    },
+                ]
+            };
+
+            var fields2 = {
+                type: "fields",
+                fieldInfos:
+                    listData
+            };
+
+            var content2 = [
+                fields2,
+                media2];
+
+            var popup2 = {
+                title: "График эффективности обсерватории",
+                content: content2
+            };
+
+
+
+            let pointGraphic = new Graphic({
+                geometry: point,
+                symbol: markerSymbol,
+                popupTemplate: popup2,
+                attributes: stationsInfo[key]['eff']
+            });
+
+
+            layer.graphics.addMany([pointGraphic]);
+
+            let textGraphic = new Graphic({
+                geometry: point,
+                symbol: textSymbol
+            });
+
+            layer.graphics.addMany([textGraphic]);
+            console.log('added');
+        }
+
+    }
+
+    function getMarker(color) {
 
         let style = "diamond";
         let size = "14px";
-        let text = code + ' (' + eff + ' %)';
 
-
-        let clas = getClass(eff, C);
-        let color = getColor(clas);
-
-
-        var markerSymbol = new SimpleMarkerSymbol({
+        return new SimpleMarkerSymbol({
             color: color,
             style: style,
             size: size,
@@ -141,8 +142,10 @@ require([
                 width: 1
             }
         });
+    }
 
-        var textSymbol = new TextSymbol({
+    function getTextSymbol(color, text) {
+        return new TextSymbol({
             color: color,
             backgroundColor: [255, 255, 255],
             text: text,
@@ -154,38 +157,13 @@ require([
                 weight: "bolder"
             }
         });
-
-
-
-
-        var pointGraphic = new Graphic({
-            geometry: point,
-            symbol: markerSymbol
-        });
-
-        pointGraphic.setAttribute("id", code);
-
-
-
-        view.graphics.addMany([pointGraphic]);
-
-        pointGraphic = new Graphic({
-            geometry: point,
-            symbol: textSymbol
-        });
-
-        view.graphics.addMany([pointGraphic]);
-
     }
-
-
 
     function getPoint(lat, lng) {
         let point = new Point({
-            longitude: lng,
-            latitude: lat
+            'longitude': lng,
+            'latitude': lat,
         });
-
         return point;
     }
 
@@ -212,6 +190,85 @@ require([
             return color = [0, 153, 0];;
     }
 
+    function calculateCountsForDate(stationsInfo, date) {
+        let counts = {
+            '1': 0,
+            '2': 0,
+            '3': 0,
+            '4': 0
+        };
+        C = midC(stationsInfo);
+        for (key in stationsInfo) {
+            counts[getClass(stationsInfo[key]['eff'][date], C)]++;
+        }
+        return counts;
+    }
+
+    function createView(flag) {
+
+        view = new MapView({
+            container: "map",
+            map: map,
+            center: [54.7249, 55.9425],
+            zoom: 5,
+            constraints: {
+                minZoom: 2
+            }
+        });
+
+        /* view.on("click", function (evt) {
+             var screenPoint = {
+                 x: evt.x,
+                 y: evt.y
+             };
+ 
+             view.hitTest(screenPoint).then(function (response) {
+                 if (response.results[0].graphic) {
+                     document.getElementById("station").innerHTML = response.results[0].graphic.getAttribute("id");
+ 
+                 }
+             });
+ 
+ 
+ 
+         });*/
+
+        var searchWidget = new Search({
+            view: view
+        });
+
+        // Adds the search widget below other elements in
+        // the top left corner of the view
+        view.ui.add(searchWidget, {
+            position: "top-right",
+            index: 0
+        });
+
+    }
+
+    $('#date').change(function () {
+        let today = $("#date").val();
+        console.log(today);
+        showAllStations(today);
+    });
+
+
+    function midC(jsObj) {
+        sum = 0;
+        cnt = 0;
+        for (key in jsObj) {
+            cnt++;
+            sum += jsObj[key]['eff'];
+        }
+        return sum / cnt;
+    }
+
+    function fixLng(lng) {
+        if (lng > 180) {
+            lng = lng - 360;
+        }
+        return lng;
+    }
 
     function formatDate(date) {
         //2016-11-01 
@@ -270,10 +327,13 @@ require([
         if (month < 10) month = "0" + month;
         if (day < 10) day = "0" + day;
 
-        var today = year + "-" + month + "-" + day;
+        let today = year + "-" + month + "-" + day;
         $("#date").attr("value", today);
+    });
 
-        loadValues();
+    view.when(function () {
+        let today = $('#date').val();
+        showAllStations(today);
     });
 
 });
@@ -281,6 +341,7 @@ require([
 
 function drawpie1(c1, c2, c3, c4, flag) {
     var svg, color;
+    let sum = c1 + c2 + c3 + c4;
     if (flag != 1) {
         svg = d3.select("svg"),
             width = 320,
