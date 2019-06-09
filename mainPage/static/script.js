@@ -41,7 +41,8 @@ require([
     function drawStations(layer, stationsInfo, date) {
         layer.removeAll();
 
-        C = midC(stationsInfo);
+        C = midC(stationsInfo, date);
+
         for (key in stationsInfo) {
             console.log(stationsInfo[key]);
             let eff = stationsInfo[key]['eff'][date];
@@ -253,12 +254,16 @@ require([
     });
 
 
-    function midC(jsObj) {
+    function midC(jsObj, date) {
         sum = 0;
         cnt = 0;
         for (key in jsObj) {
-            cnt++;
-            sum += jsObj[key]['eff'];
+            val = jsObj[key]['eff'][date];
+            if (val !== undefined) {
+                cnt++;
+                sum += val;
+            }
+
         }
         return sum / cnt;
     }

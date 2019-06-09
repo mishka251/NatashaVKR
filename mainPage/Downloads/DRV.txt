@@ -1,0 +1,1 @@
+{"name": "Dumont d'Urville, Terre Adelie, Antarctica", "code": "DRV", "coords": {"lat": -66.655, "long": 140.007}, "eff": {"2018-01-02": 70.278, "2018-01-03": 99.965, "2018-01-04": 100.0, "2018-01-05": 100.0}}

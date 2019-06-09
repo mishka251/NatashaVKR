@@ -1,0 +1,1 @@
+{"name": "Iznik", "code": "IZN", "coords": {"lat": 40.5, "long": 29.7}, "eff": {"2018-01-02": 3.229}}
